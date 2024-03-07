@@ -8,6 +8,7 @@ import util
 from pydantic import BaseModel, Field
 
 import numpy as np
+import re
 
 
 # noinspection PyMethodMayBeStatic
@@ -216,7 +217,8 @@ class Chatbot:
         pre-processed with preprocess()
         :returns: list of movie titles that are potentially in the text
         """
-        return []
+        titles = re.findall(r'"([^"]*)"', preprocessed_input)
+        return titles
 
     def find_movies_by_title(self, title):
         """ Given a movie title, return a list of indices of matching movies.
@@ -236,7 +238,31 @@ class Chatbot:
         :param title: a string containing a movie title
         :returns: a list of indices of matching movies
         """
-        return []
+
+        # process the title
+        match = re.match(r'(.+?) \((\d{4})\)', title)
+        movie_title = ""
+        year = -1
+        if match:
+            movie_title = match.group(1)
+            year = match.group(2)
+        articles = ["the", "a", "an"]
+        title_words = movie_title.split()
+        if title_words[0].lower() in articles:
+            movie_title = " ".join(title_words[1:]) + ", " + title_words[0]
+        
+        # find movie titles
+        indices = []
+        if year != -1:
+            for i in range(len(self.titles)):
+                if movie_title.lower() == self.titles[i][0].lower():
+                    indices.append(i)
+        else:
+            for i in range(len(self.titles)):
+                db_title_only = self.titles[i][0].lower().split(' (')[0]
+                if movie_title == db_title_only:
+                    indices.append(i)
+        return indices
 
     def extract_sentiment(self, preprocessed_input):
         """Extract a sentiment rating from a line of pre-processed text.
