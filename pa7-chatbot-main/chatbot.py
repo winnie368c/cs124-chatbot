@@ -238,27 +238,37 @@ class Chatbot:
         :returns: a list of indices of matching movies
         """
 
-        # process the title
-        match = re.match(r'(.+?) \((\d{4})\)', title)
-        movie_title = ""
+        ### Title Processing ###
+        title_list = title.split(' ')
+        movie_title = title
         year = -1
-        if match:
-            movie_title = match.group(1)
-            year = match.group(2)
+        # find year and reconstruct movie title without year
+        if title_list[-1][0] == '(':
+            year = title_list[-1]
+            movie_title = ""
+            title_list.pop(-1)
+            for i in range(len(title_list) - 1):
+                movie_title += title_list[i] + ' '
+            movie_title += title_list[len(title_list) - 1]
+
+        # move article to end of title
         articles = ["the", "a", "an"]
         title_words = movie_title.split()
         if title_words[0].lower() in articles:
             movie_title = " ".join(title_words[1:]) + ", " + title_words[0]
         
-        # find movie titles
+        ### Title Finding ###
         indices = []
         if year != -1:
+            # match only if db title includes specific year
+            movie_title += " " + year
             for i in range(len(self.titles)):
                 if movie_title.lower() == self.titles[i][0].lower():
                     indices.append(i)
         else:
+            # match to db title with any year
             for i in range(len(self.titles)):
-                db_title_only = self.titles[i][0].lower().split(' (')[0]
+                db_title_only = re.sub(r'\s*\(\d{4}\)', '', self.titles[i][0])
                 if movie_title == db_title_only:
                     indices.append(i)
         return indices
