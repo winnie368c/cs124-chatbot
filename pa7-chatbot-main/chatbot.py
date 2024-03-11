@@ -5,7 +5,6 @@
 # Update: 2024-01: Added the ability to run the chatbot as LLM interface (@mryan0)
 ######################################################################
 from pydantic import BaseModel, Field
-
 import numpy as np
 import re
 import util
@@ -17,7 +16,7 @@ class Chatbot:
     def __init__(self, llm_enabled=False):
         # The chatbot's default name is `moviebot`.
         # TODO: Give your chatbot a new name.
-        self.name = 'moviebot'
+        self.name = 'Bot-tholomew'
 
         self.llm_enabled = llm_enabled
 
