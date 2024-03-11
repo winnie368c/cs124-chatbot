@@ -8,6 +8,8 @@ from pydantic import BaseModel, Field
 import numpy as np
 import re
 import util
+import string 
+from porter_stemmer import PorterStemmer
 
 # noinspection PyMethodMayBeStatic
 class Chatbot:
@@ -288,7 +290,65 @@ class Chatbot:
         pre-processed with preprocess()
         :returns: a numerical value for the sentiment of the text
         """
-        return 0
+        stemmed_dict = {} 
+        stemmer = PorterStemmer()
+        for word in self.sentiment: 
+            stemmed_word = stemmer.stem(word, 0, len(word) - 1)
+            stemmed_dict[stemmed_word] = self.sentiment[word]
+        
+        score = 0 
+        negation_words = [
+            "not",
+            "didnt",
+            "never",
+            "doesnt",
+            "dont",
+            "nobody",
+            "none",
+            "neither",
+            "nor"
+        ]
+        titles = self.extract_titles(preprocessed_input)
+        for title in titles: 
+            preprocessed_input = preprocessed_input.replace(title, "")
+        
+        def remove_punctuation(input_string):
+            translator = str.maketrans('', '', string.punctuation)
+            return input_string.translate(translator)
+
+        preprocessed_input = remove_punctuation(preprocessed_input)
+     
+        skip_over = False
+
+        words = preprocessed_input.split()
+
+        for i in range(len(words)): 
+            if skip_over: 
+                skip_over = False
+                continue
+            word = words[i]
+            stemmed_word =  stemmer.stem(word, 0, len(word) - 1)
+            if stemmed_word in negation_words and (i < len(words) - 1): 
+                following_word = words[i+1]
+                following_word = stemmer.stem(following_word, 0, len(following_word) - 1)
+                if following_word in stemmed_dict and stemmed_dict[following_word] == 'pos':
+                    score -= 2
+                elif following_word in stemmed_dict and stemmed_dict[following_word] == 'neg': 
+                    score += 2
+                else: 
+                    # assume for now there are no double negatives 
+                    score -= 2
+                skip_over = True
+            elif stemmed_word in stemmed_dict and stemmed_dict[stemmed_word] == 'pos':
+                score += 1
+            elif stemmed_word in stemmed_dict and stemmed_dict[stemmed_word] == 'neg':
+                score -=1 
+        if score < 0: 
+            return -1 
+        elif score == 0: 
+            return 0
+        else: 
+            return 1 
 
     ############################################################################
     # 3. Movie Recommendation helper functions                                 #
