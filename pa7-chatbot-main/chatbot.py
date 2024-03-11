@@ -23,7 +23,7 @@ class Chatbot:
         # This matrix has the following shape: num_movies x num_users
         # The values stored in each row i and column j is the rating for
         # movie i by user j
-        self.titles, ratings = util.load_ratings('data/ratings.txt')
+        self.titles, ratings = util.load_ratings('data/movies.txt')
         self.sentiment = util.load_sentiment_dictionary('data/sentiment.txt')
 
         ########################################################################
@@ -313,6 +313,9 @@ class Chatbot:
         # zeros.
         binarized_ratings = np.zeros_like(ratings)
 
+        binarized_ratings[(ratings > threshold)] = 1
+        binarized_ratings[(ratings <= threshold)] = -1
+
         ########################################################################
         #                        END OF YOUR CODE                              #
         ########################################################################
@@ -331,7 +334,7 @@ class Chatbot:
         ########################################################################
         # TODO: Compute cosine similarity between the two vectors.             #
         ########################################################################
-        similarity = 0
+        similarity = np.dot(u,v) / (np.linalg.norm(u) * np.linalg.norm(v))
         ########################################################################
         #                          END OF YOUR CODE                            #
         ########################################################################
@@ -375,6 +378,38 @@ class Chatbot:
 
         # Populate this list with k movie indices to recommend to the user.
         recommendations = []
+
+        r_xi_list = []
+
+        # take ratings_matrix
+        # exclude movies the user has already rated in user_ratings
+        
+        # for each movie i (row) in the dataset (ratings_matrix)
+        for i in range(len(ratings_matrix)): 
+            # init r_xi for movie i
+            r_xi = 0
+            # evaluating potential neighbors j
+            #  You should use the user_ratings to figure out which movies the user has watched 
+            # (these will be your "j" values in the pseudocode above)
+            # which movies has the user watched??           
+            for j in range(len(ratings_matrix)):
+                # make sure this is not movie i
+                # make sure we have rated this movie before (the corresponding entry in the user_ratings is not 0 or null)
+                if user_ratings[j] != 0:
+                    vector_i = ratings_matrix[i]
+                    vector_j = ratings_matrix[j]
+                    cosine_similarity = Chatbot.similarity(vector_i, vector_j)
+                    # rating of user x on item j
+                    r_xj = user_ratings[j]
+                    # update our r_xi value
+                    r_xi += (cosine_similarity * r_xj)
+            # append the r_xi for movie i into r_xi list
+            # the index in r_xi_list corresponds to the movie for that same row in ratings_matrix
+            r_xi_list.append(r_xi)
+        
+        # find the indices of the top k values, this will represent the movie index
+        indexed_values = sorted(enumerate(r_xi_list), key=lambda x: x[1], reverse=True)
+        recommendations = [index for index, value in indexed_values[:k]]
 
         ########################################################################
         #                        END OF YOUR CODE                              #

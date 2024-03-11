@@ -13,6 +13,7 @@ import argparse
 import numpy as np
 import math
 
+
 # Add the parent directory to PATH so we can import chatbot
 # from the parent directory
 currentdir = os.path.dirname(
