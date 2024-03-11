@@ -28,6 +28,7 @@ class Chatbot:
         self.titles, ratings = util.load_ratings('data/ratings.txt')
         self.sentiment = util.load_sentiment_dictionary('data/sentiment.txt')
 
+        self.user_ratings = np.zeros(len(self.titles))
         ########################################################################
         # TODO: Binarize the movie ratings matrix.                             #
         ########################################################################
@@ -93,7 +94,6 @@ class Chatbot:
     ############################################################################
     # 2. Modules 2 and 3: extraction and transformation                        #
     ############################################################################
-
     def process(self, line):
         """Process a line of input from the REPL and generate a response.
 
@@ -125,6 +125,40 @@ class Chatbot:
         else:
             response = "I processed {} in Starter (GUS) mode!!".format(line)
 
+        titles = self.extract_titles(line)
+        sentiment = self.extract_sentiment(line)
+        if len(titles) > 1:
+            response = "Tell me about one movie at a time, please. My brain is feeling sluggish today."
+        elif len(titles) == 1:
+            indices = self.find_movies_by_title(titles[0])
+            if not indices:
+                response = "It doesn't seem like " + titles[0] + " exists....Tell me about another movie."
+            elif sentiment == 0:
+                response = "Hmm, I don't really get what you mean....Please tell me about a movie."
+            else:
+                if sentiment == 1:
+                    self.user_ratings[indices[0]] = 1
+                    response = "Good to hear you liked " + titles[0] + "!"
+                else:
+                    self.user_ratings[indices[0]] = -1
+                    response = "That's too bad that you didn't like " + titles[0] + "."
+
+                if np.count_nonzero(self.user_ratings) < 5:
+                    response += '\n' + "Tell me about another movie."
+                else: # 5 movies given
+                    response += '\n' + "That's enough for me to give a recommendation!"
+                    rec_nums = self.recommend(self.user_ratings, self.ratings)
+                    recs = []
+                    for index in rec_nums:
+                        recs.append(self.titles[index][0])
+                    movies = ""
+                    for rec in recs[:-1]:
+                        movies += rec + ", "
+                    movies += recs[-1]
+                    response += '\n' + "You might like: " + movies + "!"
+                    response += '\n' + "Tell me about more movies for more recommendations, or type :quit to exit."
+        else:
+            response = "Hmm, I don't really get what you mean....Please tell me about a movie."
         ########################################################################
         #                          END OF YOUR CODE                            #
         ########################################################################
