@@ -6,6 +6,7 @@
 ######################################################################
 from pydantic import BaseModel, Field
 import numpy as np
+import random
 import re
 import util
 import string 
@@ -29,12 +30,15 @@ class Chatbot:
         self.sentiment = util.load_sentiment_dictionary('data/sentiment.txt')
 
         self.user_ratings = np.zeros(len(self.titles))
+        
+        # chatbot is in the rec-giving stage and user is entering YES or NO
+        self.in_rec_stage = False
         ########################################################################
         # TODO: Binarize the movie ratings matrix.                             #
         ########################################################################
 
         # Binarize the movie ratings before storing the binarized matrix.
-        self.ratings = ratings
+        self.ratings = self.binarize(ratings, threshold=2.5)
         ########################################################################
         #                             END OF YOUR CODE                         #
         ########################################################################
@@ -49,7 +53,7 @@ class Chatbot:
         # TODO: Write a short greeting message                                 #
         ########################################################################
 
-        greeting_message = "How can I help you?"
+        greeting_message = "Nice to meet you, I'm Bot-tholomew! Tell me about a movie you watched so I can make some recommendations for you!"
 
         ########################################################################
         #                             END OF YOUR CODE                         #
@@ -64,7 +68,7 @@ class Chatbot:
         # TODO: Write a short farewell message                                 #
         ########################################################################
 
-        goodbye_message = "Have a nice day!"
+        goodbye_message = "Okay, see you later!"
 
         ########################################################################
         #                          END OF YOUR CODE                            #
@@ -125,40 +129,75 @@ class Chatbot:
         else:
             response = "I processed {} in Starter (GUS) mode!!".format(line)
 
-        titles = self.extract_titles(line)
-        sentiment = self.extract_sentiment(line)
-        if len(titles) > 1:
-            response = "Tell me about one movie at a time, please. My brain is feeling sluggish today."
-        elif len(titles) == 1:
-            indices = self.find_movies_by_title(titles[0])
-            if not indices:
-                response = "It doesn't seem like " + titles[0] + " exists....Tell me about another movie."
-            elif sentiment == 0:
-                response = "Hmm, I don't really get what you mean....Please tell me about a movie."
-            else:
-                if sentiment == 1:
-                    self.user_ratings[indices[0]] = 1
-                    response = "Good to hear you liked " + titles[0] + "!"
+        # response options
+        one_at_a_time = ["Tell me about one movie at a time, please. My brain is feeling sluggish today.", "Sorry, I can only think about one movie at a time. Please tell me about one movie you watched.", "One movie at a time please! I'm feeling overwhelmed today."]
+        nonexistent = ["It doesn't seem like TITLE exists....Tell me about another movie.", "Sorry, I've never heard of TITLE! Tell me about a different movie.", "Hmm, I've never seen TITLE. Tell me about a different movie."]
+        positive_echos = ["Good to hear you liked TITLE!", "You liked TITLE? Me too!", "I'm glad you liked TITLE."]
+        negative_echos = ["That's too bad that you didn't like TITLE.", "I'm so sorry you didn't like TITLE.", "Yikes, sorry you didn't like TITLE. I also didn't really enjoy it."]
+        neutral_echos = ["Hmm, I don't really get what you mean....Please tell me if you liked TITLE or not, or tell me about a different movie.", "Sorry, I can't tell if you liked TITLE or not. Tell me more about the movie or tell me about a different movie.", "What do you mean by that? Tell me whether or not you liked TITLE!"]
+        more_movie = ["Tell me about another movie.", "What's another movie you watched, and did you like it?", "What other movie have you seen and what was your opinion?"]
+        enough = ["That's enough for me to give a recommendation!", "I know enough about your taste to give you some recommendations now!", "Gotcha, thanks for telling me about your taste."]
+        rec_sentences = ["You might like: TITLE!", "Based on what you've told me, you should try watching: TITLE!", "Give TITLE a try!"]
+        repeat = ["Tell me about more movies for more recommendations, or type :quit to exit.", "Want more recs? Tell me about more movies, or type :quit to exit.", "Still need more recs? Tell me about more movies you've watched, or type :quit to exit."]
+        talk_about_movies_only = ["Hmm, I didn't hear you say a movie title. Put the title between double quotation marks. Tell me about a movie you've watched.", "Sorry, I can only talk about movies right now. Make sure to put the title between double quotation marks. Tell me about a movie you've seen recently.", "I didn't catch you mentioning a movie. Put the title between double quotation marks, please. What's your opinion on a movie you've seen recently?"]
+        more_rec_question = ["Do you want to hear more recs? Type YES for more recs or NO if you don't want more recs.", "How about another one? Type YES for more recs or NO if you don't want more recs.", "Are you interested in another rec? Type YES for more recs or NO if you don't want more recs."]
+        
+        ### Process Logic ###
+        line = line.lower()
+        # in rec-giving stage
+        if self.in_rec_stage:
+            if line == "YES":
+                response += '\n' + random.choice(rec_sentences).replace("TITLE", self.recs[0])
+                self.recs = self.recs[1:]
+                if self.recs:
+                    response += '\n' + random.choice(more_rec_question)
                 else:
-                    self.user_ratings[indices[0]] = -1
-                    response = "That's too bad that you didn't like " + titles[0] + "."
+                    self.in_rec_stage = False
+                    response += '\n' + random.choice(repeat)
+            elif line == "NO":
+                self.in_rec_stage = False
+                response = random.choice(repeat)
+            else:
+                response = "Please type YES for more recs or NO if you don't want any more recs."
 
-                if np.count_nonzero(self.user_ratings) < 5:
-                    response += '\n' + "Tell me about another movie."
-                else: # 5 movies given
-                    response += '\n' + "That's enough for me to give a recommendation!"
-                    rec_nums = self.recommend(self.user_ratings, self.ratings)
-                    recs = []
-                    for index in rec_nums:
-                        recs.append(self.titles[index][0])
-                    movies = ""
-                    for rec in recs[:-1]:
-                        movies += rec + ", "
-                    movies += recs[-1]
-                    response += '\n' + "You might like: " + movies + "!"
-                    response += '\n' + "Tell me about more movies for more recommendations, or type :quit to exit."
+        # in question-asking stage
         else:
-            response = "Hmm, I don't really get what you mean....Please tell me about a movie."
+            titles = self.extract_titles(line)
+            sentiment = self.extract_sentiment(line)
+            if len(titles) > 1:
+                response = random.choice(one_at_a_time)
+            elif len(titles) == 1:
+                indices = self.find_movies_by_title(titles[0])
+                if not indices:
+                    response = random.choice(nonexistent).replace("TITLE", titles[0])
+                elif sentiment == 0:
+                    response = random.choice(neutral_echos).replace("TITLE", titles[0])
+                else:
+                    if sentiment == 1:
+                        self.user_ratings[indices[0]] = 1
+                        response = random.choice(positive_echos).replace("TITLE", titles[0])
+                    else:
+                        self.user_ratings[indices[0]] = -1
+                        response = random.choice(negative_echos).replace("TITLE", titles[0])
+
+                    if np.count_nonzero(self.user_ratings) < 5:
+                        response += '\n' + random.choice(more_movie)
+                    else: # 5 movies given
+                        self.in_rec_stage = True
+                        response += '\n' + random.choice(enough)
+                        rec_nums = self.recommend(self.user_ratings, self.ratings)
+                        self.recs = []
+                        for index in rec_nums:
+                            self.recs.append(self.titles[index][0])
+                        response += '\n' + random.choice(rec_sentences).replace("TITLE", self.recs[0])
+                        self.recs = self.recs[1:]
+                        if self.recs:
+                            response += '\n' + random.choice(more_rec_question)
+                        else:
+                            self.in_rec_stage = False
+                            response += '\n' + random.choice(repeat)
+            else:
+                response = random.choice(talk_about_movies_only)
         ########################################################################
         #                          END OF YOUR CODE                            #
         ########################################################################
@@ -274,6 +313,9 @@ class Chatbot:
         """
 
         ### Title Processing ###
+        if title == "":
+            return []
+        title = title.lower()
         title_list = title.split(' ')
         movie_title = title
         year = -1
@@ -298,13 +340,13 @@ class Chatbot:
             # match only if db title includes specific year
             movie_title += " " + year
             for i in range(len(self.titles)):
-                if movie_title.lower() == self.titles[i][0].lower():
+                if movie_title == self.titles[i][0].lower():
                     indices.append(i)
         else:
             # match to db title with any year
             for i in range(len(self.titles)):
                 db_title_only = re.sub(r'\s*\(\d{4}\)', '', self.titles[i][0])
-                if movie_title == db_title_only:
+                if movie_title == db_title_only.lower():
                     indices.append(i)
         return indices
 
@@ -416,7 +458,9 @@ class Chatbot:
         # The starter code returns a new matrix shaped like ratings but full of
         # zeros.
         binarized_ratings = np.zeros_like(ratings)
-
+        binarized_ratings[(ratings > threshold) & (ratings <= 5)] = 1
+        binarized_ratings[(ratings <= threshold) & (ratings > 0)] = -1
+        
         ########################################################################
         #                        END OF YOUR CODE                              #
         ########################################################################
@@ -435,9 +479,12 @@ class Chatbot:
         ########################################################################
         # TODO: Compute cosine similarity between the two vectors.             #
         ########################################################################
-        similarity = np.dot(u, v) / (np.linalg.norm(u) * np.linalg.norm(v))
+        if (np.linalg.norm(u) * np.linalg.norm(v)) == 0:
+            return 0
+        else:
+            similarity = np.dot(u,v) / (np.linalg.norm(u) * np.linalg.norm(v))
         ########################################################################
-        #                         END OF YOUR CODE                            #
+        #                          END OF YOUR CODE                            #
         ########################################################################
         return similarity
 
@@ -479,6 +526,39 @@ class Chatbot:
 
         # Populate this list with k movie indices to recommend to the user.
         recommendations = []
+
+        r_xi_list = []
+        
+        # r_xi_list should be length number of movies
+        # for each movie i (row) in the dataset (ratings_matrix)
+        for i in range(len(ratings_matrix)):
+            # init r_xi for movie i
+            r_xi = 0
+            # evaluating potential neighbors j
+            #  You should use the user_ratings to figure out which movies the user has watched 
+            # (these will be your "j" values in the pseudocode above)
+            # which movies has the user watched??
+            if user_ratings[i] == 0:          
+                for j in range(len(ratings_matrix)):
+                    # make sure this is not movie i
+                    # make sure we have rated this movie before (the corresponding entry in the user_ratings is not 0 or null)
+                    if user_ratings[j] != 0:
+                        if np.any(ratings_matrix[i]) and np.any(ratings_matrix[j]):
+                            vector_i = ratings_matrix[i]
+                            vector_j = ratings_matrix[j]
+                            # some problems with division by 0 
+                            cosine_similarity = self.similarity(vector_i, vector_j)
+                            # rating of user x on item j
+                            r_xj = user_ratings[j]
+                            # update our r_xi value
+                            r_xi += (cosine_similarity * r_xj)
+                # append the r_xi for movie i into r_xi list
+                # the index in r_xi_list corresponds to the movie for that same row in ratings_matrix
+            r_xi_list.append(r_xi)
+        
+        # find the indices of the top k values, this will represent the movie index
+        indexed_values = sorted(enumerate(r_xi_list), key=lambda x: x[1], reverse=True)
+        recommendations = [index for index, value in indexed_values[0:k]]
 
         ########################################################################
         #                        END OF YOUR CODE                              #
