@@ -131,12 +131,12 @@ class Chatbot:
 
         # response options
         one_at_a_time = ["Tell me about one movie at a time, please. My brain is feeling sluggish today.", "Sorry, I can only think about one movie at a time. Please tell me about one movie you watched.", "One movie at a time please! I'm feeling overwhelmed today."]
-        nonexistent = ["It doesn't seem like TITLE exists....Tell me about another movie.", "Sorry, I've never heard of TITLE! Tell me about a different movie.", "Hmm, I've never seen TITLE. Tell me about a different movie."]
+        nonexistent = ["It doesn't seem like TITLE exists in my database....Tell me about another movie.", "Sorry, I've never heard of TITLE! Tell me about a different movie.", "Hmm, I'm not familiar with TITLE. Tell me about a different movie."]
         positive_echos = ["Good to hear you liked TITLE!", "You liked TITLE? Me too!", "I'm glad you liked TITLE."]
         negative_echos = ["That's too bad that you didn't like TITLE.", "I'm so sorry you didn't like TITLE.", "Yikes, sorry you didn't like TITLE. I also didn't really enjoy it."]
-        neutral_echos = ["Hmm, I don't really get what you mean....Please tell me if you liked TITLE or not, or tell me about a different movie.", "Sorry, I can't tell if you liked TITLE or not. Tell me more about the movie or tell me about a different movie.", "What do you mean by that? Tell me whether or not you liked TITLE!"]
+        neutral_echos = ["Hmm, I don't really get what you mean about TITLE....Please tell me if you liked TITLE or not, or tell me about a different movie.", "Sorry, I can't tell if you liked TITLE or not. Can you please clarify?", "I'm confused whether or not you liked TITLE. Please explain further about TITLE."]
         more_movie = ["Tell me about another movie.", "What's another movie you watched, and did you like it?", "What other movie have you seen and what was your opinion?"]
-        enough = ["That's enough for me to give a recommendation!", "I know enough about your taste to give you some recommendations now!", "Gotcha, thanks for telling me about your taste."]
+        enough = ["That's enough for me to give a recommendation! Do you want to hear a recommendation? Type YES or NO.", "I know enough about your taste to give you some recommendations now! Do you want to hear a recommendation? Type YES or NO", "Gotcha, thanks for telling me about your taste. Do you want to hear a recommendation? Type YES or NO"]
         rec_sentences = ["You might like: TITLE!", "Based on what you've told me, you should try watching: TITLE!", "Give TITLE a try!"]
         repeat = ["Tell me about more movies for more recommendations, or type :quit to exit.", "Want more recs? Tell me about more movies, or type :quit to exit.", "Still need more recs? Tell me about more movies you've watched, or type :quit to exit."]
         talk_about_movies_only = ["Hmm, I didn't hear you say a movie title. Put the title between double quotation marks. Tell me about a movie you've watched.", "Sorry, I can only talk about movies right now. Make sure to put the title between double quotation marks. Tell me about a movie you've seen recently.", "I didn't catch you mentioning a movie. Put the title between double quotation marks, please. What's your opinion on a movie you've seen recently?"]
@@ -146,7 +146,7 @@ class Chatbot:
         line = line.lower()
         # in rec-giving stage
         if self.in_rec_stage:
-            if line == "YES":
+            if line == "yes":
                 response += '\n' + random.choice(rec_sentences).replace("TITLE", self.recs[0])
                 self.recs = self.recs[1:]
                 if self.recs:
@@ -154,8 +154,9 @@ class Chatbot:
                 else:
                     self.in_rec_stage = False
                     response += '\n' + random.choice(repeat)
-            elif line == "NO":
+            elif line == "no":
                 self.in_rec_stage = False
+                self.recs = []
                 response = random.choice(repeat)
             else:
                 response = "Please type YES for more recs or NO if you don't want any more recs."
@@ -169,16 +170,16 @@ class Chatbot:
             elif len(titles) == 1:
                 indices = self.find_movies_by_title(titles[0])
                 if not indices:
-                    response = random.choice(nonexistent).replace("TITLE", titles[0])
+                    response = random.choice(nonexistent).replace("TITLE", titles[0].title())
                 elif sentiment == 0:
-                    response = random.choice(neutral_echos).replace("TITLE", titles[0])
+                    response = random.choice(neutral_echos).replace("TITLE", titles[0].title())
                 else:
                     if sentiment == 1:
                         self.user_ratings[indices[0]] = 1
-                        response = random.choice(positive_echos).replace("TITLE", titles[0])
+                        response = random.choice(positive_echos).replace("TITLE", titles[0].title())
                     else:
                         self.user_ratings[indices[0]] = -1
-                        response = random.choice(negative_echos).replace("TITLE", titles[0])
+                        response = random.choice(negative_echos).replace("TITLE", titles[0].title())
 
                     if np.count_nonzero(self.user_ratings) < 5:
                         response += '\n' + random.choice(more_movie)
@@ -189,13 +190,6 @@ class Chatbot:
                         self.recs = []
                         for index in rec_nums:
                             self.recs.append(self.titles[index][0])
-                        response += '\n' + random.choice(rec_sentences).replace("TITLE", self.recs[0])
-                        self.recs = self.recs[1:]
-                        if self.recs:
-                            response += '\n' + random.choice(more_rec_question)
-                        else:
-                            self.in_rec_stage = False
-                            response += '\n' + random.choice(repeat)
             else:
                 response = random.choice(talk_about_movies_only)
         ########################################################################
