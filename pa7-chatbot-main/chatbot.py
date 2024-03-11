@@ -23,7 +23,7 @@ class Chatbot:
         # This matrix has the following shape: num_movies x num_users
         # The values stored in each row i and column j is the rating for
         # movie i by user j
-        self.titles, ratings = util.load_ratings('data/movies.txt')
+        self.titles, ratings = util.load_ratings('data/ratings.txt')
         self.sentiment = util.load_sentiment_dictionary('data/sentiment.txt')
 
         ########################################################################
@@ -31,7 +31,7 @@ class Chatbot:
         ########################################################################
 
         # Binarize the movie ratings before storing the binarized matrix.
-        self.ratings = ratings
+        self.ratings = Chatbot.binarize(ratings, threshold=2.5)
         ########################################################################
         #                             END OF YOUR CODE                         #
         ########################################################################
@@ -237,30 +237,41 @@ class Chatbot:
         :returns: a list of indices of matching movies
         """
 
-        # process the title
-        match = re.match(r'(.+?) \((\d{4})\)', title)
-        movie_title = ""
+         ### Title Processing ###
+        title_list = title.split(' ')
+        movie_title = title
         year = -1
-        if match:
-            movie_title = match.group(1)
-            year = match.group(2)
+        # find year and reconstruct movie title without year
+        if title_list[-1][0] == '(':
+            year = title_list[-1]
+            movie_title = ""
+            title_list.pop(-1)
+            for i in range(len(title_list) - 1):
+                movie_title += title_list[i] + ' '
+            movie_title += title_list[len(title_list) - 1]
+
+        # move article to end of title
         articles = ["the", "a", "an"]
         title_words = movie_title.split()
         if title_words[0].lower() in articles:
             movie_title = " ".join(title_words[1:]) + ", " + title_words[0]
         
-        # find movie titles
+        ### Title Finding ###
         indices = []
         if year != -1:
+            # match only if db title includes specific year
+            movie_title += " " + year
             for i in range(len(self.titles)):
                 if movie_title.lower() == self.titles[i][0].lower():
                     indices.append(i)
         else:
+            # match to db title with any year
             for i in range(len(self.titles)):
-                db_title_only = self.titles[i][0].lower().split(' (')[0]
+                db_title_only = re.sub(r'\s*\(\d{4}\)', '', self.titles[i][0])
                 if movie_title == db_title_only:
                     indices.append(i)
         return indices
+
 
     def extract_sentiment(self, preprocessed_input):
         """Extract a sentiment rating from a line of pre-processed text.
@@ -312,10 +323,9 @@ class Chatbot:
         # The starter code returns a new matrix shaped like ratings but full of
         # zeros.
         binarized_ratings = np.zeros_like(ratings)
-
-        binarized_ratings[(ratings > threshold)] = 1
-        binarized_ratings[(ratings <= threshold)] = -1
-
+        binarized_ratings[(ratings > threshold) & (ratings <= 5)] = 1
+        binarized_ratings[(ratings <= threshold) & (ratings > 0)] = -1
+        
         ########################################################################
         #                        END OF YOUR CODE                              #
         ########################################################################
@@ -334,7 +344,10 @@ class Chatbot:
         ########################################################################
         # TODO: Compute cosine similarity between the two vectors.             #
         ########################################################################
-        similarity = np.dot(u,v) / (np.linalg.norm(u) * np.linalg.norm(v))
+        if (np.linalg.norm(u) * np.linalg.norm(v)) == 0:
+            return 0
+        else:
+            similarity = np.dot(u,v) / (np.linalg.norm(u) * np.linalg.norm(v))
         ########################################################################
         #                          END OF YOUR CODE                            #
         ########################################################################
@@ -380,36 +393,37 @@ class Chatbot:
         recommendations = []
 
         r_xi_list = []
-
-        # take ratings_matrix
-        # exclude movies the user has already rated in user_ratings
         
+        # r_xi_list should be length number of movies
         # for each movie i (row) in the dataset (ratings_matrix)
-        for i in range(len(ratings_matrix)): 
+        for i in range(len(ratings_matrix)):
             # init r_xi for movie i
             r_xi = 0
             # evaluating potential neighbors j
             #  You should use the user_ratings to figure out which movies the user has watched 
             # (these will be your "j" values in the pseudocode above)
-            # which movies has the user watched??           
-            for j in range(len(ratings_matrix)):
-                # make sure this is not movie i
-                # make sure we have rated this movie before (the corresponding entry in the user_ratings is not 0 or null)
-                if user_ratings[j] != 0:
-                    vector_i = ratings_matrix[i]
-                    vector_j = ratings_matrix[j]
-                    cosine_similarity = Chatbot.similarity(vector_i, vector_j)
-                    # rating of user x on item j
-                    r_xj = user_ratings[j]
-                    # update our r_xi value
-                    r_xi += (cosine_similarity * r_xj)
-            # append the r_xi for movie i into r_xi list
-            # the index in r_xi_list corresponds to the movie for that same row in ratings_matrix
+            # which movies has the user watched??
+            if user_ratings[i] == 0:          
+                for j in range(len(ratings_matrix)):
+                    # make sure this is not movie i
+                    # make sure we have rated this movie before (the corresponding entry in the user_ratings is not 0 or null)
+                    if user_ratings[j] != 0:
+                        if np.any(ratings_matrix[i]) and np.any(ratings_matrix[j]):
+                            vector_i = ratings_matrix[i]
+                            vector_j = ratings_matrix[j]
+                            # some problems with division by 0 
+                            cosine_similarity = Chatbot.similarity(self, vector_i, vector_j)
+                            # rating of user x on item j
+                            r_xj = user_ratings[j]
+                            # update our r_xi value
+                            r_xi += (cosine_similarity * r_xj)
+                # append the r_xi for movie i into r_xi list
+                # the index in r_xi_list corresponds to the movie for that same row in ratings_matrix
             r_xi_list.append(r_xi)
         
         # find the indices of the top k values, this will represent the movie index
         indexed_values = sorted(enumerate(r_xi_list), key=lambda x: x[1], reverse=True)
-        recommendations = [index for index, value in indexed_values[:k]]
+        recommendations = [index for index, value in indexed_values[0:k]]
 
         ########################################################################
         #                        END OF YOUR CODE                              #
