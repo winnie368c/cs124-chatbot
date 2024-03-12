@@ -18,7 +18,6 @@ class Chatbot:
 
     def __init__(self, llm_enabled=False):
         # The chatbot's default name is `moviebot`.
-        # TODO: Give your chatbot a new name.
         self.name = 'Bot-tholomew'
 
         self.llm_enabled = llm_enabled
@@ -362,11 +361,13 @@ class Chatbot:
         """
         stemmed_dict = {} 
         stemmer = PorterStemmer()
+        # Stem each word and set the val to what the val was in the sentiment dict
         for word in self.sentiment: 
             stemmed_word = stemmer.stem(word, 0, len(word) - 1)
             stemmed_dict[stemmed_word] = self.sentiment[word]
         
         score = 0 
+        # Negation words w/o punc since we remove punc in our input
         negation_words = [
             "not",
             "didnt",
@@ -398,15 +399,20 @@ class Chatbot:
                 continue
             word = words[i]
             stemmed_word =  stemmer.stem(word, 0, len(word) - 1)
+
+            # If the word is a negation word and it's not the last word
             if stemmed_word in negation_words and (i < len(words) - 1): 
                 following_word = words[i+1]
                 following_word = stemmer.stem(following_word, 0, len(following_word) - 1)
+                
+                # If the following word is pos, subtract 2 since we flip sentiment (e.g. "didn't like")
+                # If the following word is neg, add 2 (e.g. "didn't hate")
                 if following_word in stemmed_dict and stemmed_dict[following_word] == 'pos':
                     score -= 2
                 elif following_word in stemmed_dict and stemmed_dict[following_word] == 'neg': 
                     score += 2
                 else: 
-                    # assume for now there are no double negatives 
+                    # Assume for now there are no double negatives 
                     score -= 2
                 skip_over = True
             elif stemmed_word in stemmed_dict and stemmed_dict[stemmed_word] == 'pos':
