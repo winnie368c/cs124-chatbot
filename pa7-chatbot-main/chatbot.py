@@ -288,7 +288,32 @@ class Chatbot:
         :returns: a list of emotions in the text or an empty list if no emotions found.
         Possible emotions are: "Anger", "Disgust", "Fear", "Happiness", "Sadness", "Surprise"
         """
-        return []
+      
+        system_prompt = """You are a bot responsible for extracting emotions from the user input."""+\
+         """Read the user input and detect if one or more of these emotions are present in the user input: """+\
+         """ "Anger", "Disgust", "Fear", "Happiness", "Sadness", "Surprise" """+\
+         """ Return the emotions that you find as a comma separated list, and place a new-line character at the end of your response.""" +\
+         """ Remember that the emotion of fear is usually conveyed through words like scary, frightened, startled. Be careful not to overdetect fear if a user sounds annoyed or disappointed.""" +\
+         """ It is possible that the user input has none of the six emotions listed above, in which case you should return an empty string.""" +\
+         """Here are a few example inputs and the expected ouputs for them: """+\
+         """Input: "Wow! That was not a recommendation I expected!" Output: Surprise """+\
+         """Input: "That movie was so lovely, I really enjoyed it! " Output: Happiness """+\
+         """Input: "Disgusting!!!! " Output: Disgusting """+\
+         """Input: "That movie was super scary." Output: Fear """+\
+         """Input: "I couldn't stop crying during that movie" Output: Sadness """+\
+         """Input: "Stop making stupid recommendations, it pisses me off!" Output: Anger"""+\
+         """Input: "Ewww that movie was so gruesome!!  Stop making stupid recommendations!!" Output: Disgust, Anger"""+\
+         """Input: "Ugh that movie was so gruesome!" Output: Disgust"""+\
+         """Input: "Ah!!! I was so scared during that movie!" Output: Fear, Surprise"""+\
+         """Input: "Woah!!  That movie was so shockingly bad!  You had better stop making awful recommendations they're pissing me off." Output: Surprise, Anger"""+\
+         """Input: "What movies are you going to recommend today?" Output:"""+\
+         """\n\n"""
+        stop = ["\n"]
+        response = util.simple_llm_call(system_prompt, preprocessed_input, stop=stop)
+        parsed_list = response.lower().strip().split(",")
+        for i in range(len(parsed_list)):
+            parsed_list[i] = parsed_list[i].strip() 
+        return parsed_list
 
     def extract_titles(self, preprocessed_input):
         """Extract potential movie titles from a line of pre-processed text.
