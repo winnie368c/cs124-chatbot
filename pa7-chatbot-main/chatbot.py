@@ -374,14 +374,22 @@ class Chatbot:
         :param title: a string containing a movie title
         :returns: a list of indices of matching movies
         """
+        ### LLM Programming Mode ###
 
-        ### Title Processing ###
+        # If in LLM mode, just process the title differently: if it is in another language other than English, translate to English
+        # Do the rest of the things the same 
+
+         ### Title Processing ###
+        #print("Titled passed in:", title)
+
         if title == "":
             return []
         title = title.lower()
         title_list = title.split(' ')
         movie_title = title
+        # no year
         year = -1
+
         # find year and reconstruct movie title without year
         if title_list[-1][0] == '(':
             year = title_list[-1]
@@ -390,28 +398,84 @@ class Chatbot:
             for i in range(len(title_list) - 1):
                 movie_title += title_list[i] + ' '
             movie_title += title_list[len(title_list) - 1]
+        
+        if (self.llm_enabled):
+            system_prompt = """You are a professional language translation bot for helping us translate movie titles from German, Spanish, and French, Danish, and Italian.""" +\
+            """Read the user message, which is a movie title with no other punctuation or information. """ +\
+            """Identify what language the movie title is in. If the movie title is in English, do not change it at all and respond with the movie title I gave you, unchanged.""" +\
+            """If the movie title is not in English and is in German, Spanish, French, Danish, or Italian, translate the movie title to English and respond with the English translation of the movie title, and do not respond with anything else."""+\
+            """DO NOT RESPOND WITH A SENTENCE. ONLY RESPOND WITH THE TRANSLATED MOVIE TITLE!!! """ +\
+            """Here are a few example inputs and the expected ouputs for them: """ +\
+            """Input: "Alene Hjemme" Output: "Home Alone" """ +\
+            """Input: "El Cuaderno" Output: "The Notebook" """ +\
+            """MAKE SURE TO RESPOND WITH THE TITLE ONLY. NO SENTENCES, NO PARENTHESES."""
+            """\n\n"""
+            message = movie_title
 
+            # Our llm will stop when it sees a newline character.
+            # You can add more stop tokens to the list if you want to stop on other tokens!
+            # Feel free to remove the stop parameter if you want the llm to run to completion.
+            stop = ["\n"]
+
+            llm_output = util.simple_llm_call(system_prompt, message)
+            # update movie title
+            #print("The llm output:", llm_output)
+            
+            movie_title = llm_output 
+
+        # we don't want to move articles to the end of title if foreign language? 
+        # or do we want to do this but with foreign articles...
+        
         # move article to end of title
         articles = ["the", "a", "an"]
+        vowels = ['a', 'e', 'i', 'o', 'u']
+        # split the title words 
         title_words = movie_title.split()
+        
+        ### LLM PROGRAMMING MODE STARTS ###
+        # make sure "an" does not come before a word starting with a consonant after translation to English
+        # similar idea with "a"
+        for i in range(len(title_words)):
+            # if we encounter "a"
+            if title_words[i].lower() == 'a':
+                # if the beginning of the next word is a vowel, change our article to an
+                if title_words[i+1][0] in vowels:
+                    title_words[i] = 'An'
+            # if we encounter "an"
+            elif title_words[i].lower() == 'an':
+                # if the beginning of the next word is not a vowel, change our article to a
+                if title_words[i+1][0] not in vowels:
+                    title_words[i] = 'A'
+        ### LLM PROGRAMMING MODE END ###
+                    
+        # put articles at the end
         if title_words[0].lower() in articles:
             movie_title = " ".join(title_words[1:]) + ", " + title_words[0]
+        
         
         ### Title Finding ###
         indices = []
         if year != -1:
             # match only if db title includes specific year
             movie_title += " " + year
+            #print("Translated movie title after processing:", movie_title)
             for i in range(len(self.titles)):
-                if movie_title == self.titles[i][0].lower():
+                if movie_title.lower() == self.titles[i][0].lower():
                     indices.append(i)
         else:
             # match to db title with any year
+            #print("Year status:", year)
+            #print("Translated movie title after processing:", movie_title.lower())
             for i in range(len(self.titles)):
+                    
                 db_title_only = re.sub(r'\s*\(\d{4}\)', '', self.titles[i][0])
-                if movie_title == db_title_only.lower():
+                #if i == 2906:
+                    #print("Title at index 2906 without year:", db_title_only.lower())
+                #print("Titles without year:", db_title_only.lower())
+                if movie_title.lower().strip() == db_title_only.lower().strip():
                     indices.append(i)
         return indices
+    
 
     def extract_sentiment(self, preprocessed_input):
         """Extract a sentiment rating from a line of pre-processed text.
