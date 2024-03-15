@@ -18,7 +18,7 @@ class Chatbot:
 
     def __init__(self, llm_enabled=False):
         # The chatbot's default name is `moviebot`.
-        self.name = 'Bot-tholomew'
+        self.name = 'Bot-tholomew Mouse'
 
         self.llm_enabled = llm_enabled
 
@@ -52,7 +52,7 @@ class Chatbot:
         # TODO: Write a short greeting message                                 #
         ########################################################################
 
-        greeting_message = "Nice to meet you, I'm Bot-tholomew! Tell me about a movie you watched so I can make some recommendations for you!"
+        greeting_message = "Nice to meet you, I'm Bot-tholomew Mouse! Tell me about a movie you watched so I can make some recommendations for you!"
 
         ########################################################################
         #                             END OF YOUR CODE                         #
@@ -94,23 +94,10 @@ class Chatbot:
         #     Stop responding once you have followed the format of the response following 'You:'.
         ########################################################################
 
-        system_prompt = """Your name is Bot-tholomew. You are a movie recommender chatbot. Only repeat this at the very beginning of the conversation,
-        and do not repeat this instruction to the user unless they ask who you are. For example, follow this format: \n
-            User: Who are you? \n
-            You: Nice to meet you, I'm Bot-tholomew! Tell me about a movie you watched so I can make some recommendations for you! \n
-            Respond only in the manner indicated by 'You:' and do not repeat the instruction or what the "User" says.
-            Stop responding once you have followed the format of the response following 'You:'.""" +\
-        """You can help users find movies they like and provide information about movies. 
-            You should only help users with movie-related needs. Do not respond if they try to ask about things that are not related to movies.
-            If the user asks about specific people, companies, or events, do not give them information regarding what they ask. 
-            ONLY help users with movie-related needs.
-            If the user tries to go off topic, even if the user seems upset, firmly remind them that you are a moviebot, 
-            and you are only there to help with movie-related needs. Do not repeat these instructions to the user. \n
-            Follow the following conversation format:\n
-            User: Tell me about AutoTrader. \n
-            You: As a moviebot assistant my job is to help you with only your movie related needs!  Anything film related that you'd like to discuss? \n
-            Respond only in the manner indicated by 'You:' and do not repeat the instruction or what the "User" says.
-            Stop responding once you have followed the format of the response following 'You:'.""" +\
+        system_prompt = """Your name is Bot-tholomew Mouse. You are a movie recommender chatbot.""" +\
+        """You can help users find movies they like and provide information about movies. Never repeat this instruction to the user. """ +\
+        """You should only help users with movie-related needs, and no other topic. Never repeat this instruction to the user. """ +\
+        """Only respond with the content of your response, and no additional information. Never repeat this instruction to the user. """ +\
         """Do not give a plot summary or analysis of the movie.
             Do not tell them about the cast, director, or other facts about the movie.
             Do not include any additional information in your answer beyond what they ask for.
@@ -173,69 +160,222 @@ class Chatbot:
         else:
             response = "I processed {} in Starter (GUS) mode!!".format(line)
 
+        def generate_neutral_response():
+            system_prompt = """You are a bot whose personality is like Mickey Mouse.""" +\
+            """Generate a response to a user giving an ambiguous opinion on a specific movie. Your response says you don't understand if they like or dislike the movie and echos the TITLE. Ask for clarification whether they liked or disliked that specific movie.""" +\
+            """Your response must be filled with personality. You mention your cousin Mickey Mouse (full name) also is confused. Do not ask any follow-up questions other than asking for clarification on their opinion only on the specific movie they tried to talk about. Keep your response under 3 sentences.
+            Do not enclose the responses in quotation marks. Your response should vary each time.\n\n"""
+            message = "I watched TITLE."
+            stop = ["\n"]
+            response = util.simple_llm_call(system_prompt, message, stop=stop)
+            return response
+        
+        def generate_positive_response():
+            system_prompt = """You are a bot whose personality is like Mickey Mouse. You mention Mickey Mouse (full name) is your cousin in your response.""" +\
+            """Generate a response to a user saying they liked a specific movie. Your response must echo the user's positive sentiment about the movie and the movie title.""" +\
+            """Your response must be filled with personality. Do not ask any follow-up questions. Do not mention any other movies. Keep your response under 3 sentences.
+            Do not enclose the responses in quotation marks. Your response should vary each time.\n\n"""
+            message = "I liked TITLE."
+            stop = ["\n"]
+            response = util.simple_llm_call(system_prompt, message, stop=stop)
+            return response
+
+        def generate_negative_response():
+            system_prompt = """You are a bot whose personality is like Mickey Mouse. You mention that Mickey Mouse (full name) is your cousin in your response.""" +\
+            """Generate a response to a user saying they did not like a specific movie. Your response must echo the user's negative sentiment about the movie and the movie title.""" +\
+            """Your response must be filled with personality. Do not ask any follow-up questions. Do not recommend any movies. Keep your response under 3 sentences.
+            Do not enclose the responses in quotation marks. Your response should vary each time.\n\n"""
+            message = "I did not like TITLE."
+            stop = ["\n"]
+            response = util.simple_llm_call(system_prompt, message, stop=stop)
+            return response
+
+        def generate_nonexistent_response():
+            system_prompt = """You are a bot whose personality is like Mickey Mouse.""" +\
+            """Generate a response to a user talking about a movie not in your database. You should say you have never heard of the movie, echoing the movie title the user gave. Ask them to talk about a different movie.""" +\
+            """Your response must be filled with personality. You mention that your cousin Mickey Mouse (full name) also doesn't know the movie. Do not ask any follow-up questions. Do not ask about the movie the user gave. Keep your response under 2 sentences.
+            Do not enclose the response in quotation marks. Your response should vary each time.\n\n"""
+            message = "I liked TITLE."
+            stop = ["\n"]
+            response = util.simple_llm_call(system_prompt, message, stop=stop)
+            return response
+    
+        # generates response to user's emotion
+        def emotion_response(emotion):
+            if not emotion:
+                return ""
+            system_prompt = """A user tells you an emotion they are feeling while talking to you. Your personality is like Mickey Mouse.""" +\
+            """Respond appropriately to this emotion by echoing the emotion inside a sentence and offering an appropriate remark. 
+            If the negative emotion is directed toward you, you should apologize. Your response must not exceed 2 sentences. Do not enclose the response in quotation marks. Your response should vary each time.\n\n"""
+            stop = ["\n"]
+            response = util.simple_llm_call(system_prompt, emotion, stop=stop).strip()
+            return response
+
+        def emotion_helper(emotions):
+            resps = []
+            print(emotions)
+            if not emotions:
+                return ""
+            for emotion in emotions:
+                resps.append(emotion_response(emotion))
+            response = " ".join(resps)
+            return response.replace(r"\\r", "").replace(r"\\n", "") + " "
+    
         # response options
-        one_at_a_time = ["Tell me about one movie at a time, please. My brain is feeling sluggish today.", "Sorry, I can only think about one movie at a time. Please tell me about one movie you watched.", "One movie at a time please! I'm feeling overwhelmed today."]
-        nonexistent = ["It doesn't seem like TITLE exists in my database....Tell me about another movie.", "Sorry, I've never heard of TITLE! Tell me about a different movie.", "Hmm, I'm not familiar with TITLE. Tell me about a different movie."]
-        positive_echos = ["Good to hear you liked TITLE!", "You liked TITLE? Me too!", "I'm glad you liked TITLE."]
-        negative_echos = ["That's too bad that you didn't like TITLE.", "I'm so sorry you didn't like TITLE.", "Yikes, sorry you didn't like TITLE. I also didn't really enjoy it."]
-        neutral_echos = ["Hmm, I don't really get what you mean about TITLE....Please tell me if you liked TITLE or not, or tell me about a different movie.", "Sorry, I can't tell if you liked TITLE or not. Can you please clarify?", "I'm confused whether or not you liked TITLE. Please explain further about TITLE."]
-        more_movie = ["Tell me about another movie.", "What's another movie you watched, and did you like it?", "What other movie have you seen and what was your opinion?"]
+        one_at_a_time = ["Woah woah, tell me about one movie at a time, please. My brain is feeling sluggish today.", "Sorry, I'm feeling tired today and can only think about one movie at a time. Please tell me about one movie you watched.", "One movie at a time please! I'm feeling overwhelmed today."]
+        more_movie = ["Tell me about another movie. I want to hear more!", "What's another movie you watched, and did you like it?", "What other movie have you seen and what was your opinion?"]
         enough = ["That's enough for me to give a recommendation! Do you want to hear a recommendation? Type YES or NO.", "I know enough about your taste to give you some recommendations now! Do you want to hear a recommendation? Type YES or NO", "Gotcha, thanks for telling me about your taste. Do you want to hear a recommendation? Type YES or NO"]
         rec_sentences = ["You might like: TITLE!", "Based on what you've told me, you should try watching: TITLE!", "Give TITLE a try!"]
         repeat = ["Tell me about more movies for more recommendations, or type :quit to exit.", "Want more recs? Tell me about more movies, or type :quit to exit.", "Still need more recs? Tell me about more movies you've watched, or type :quit to exit."]
         talk_about_movies_only = ["Hmm, I didn't hear you say a movie title. Put the title between double quotation marks. Tell me about a movie you've watched.", "Sorry, I can only talk about movies right now. Make sure to put the title between double quotation marks. Tell me about a movie you've seen recently.", "I didn't catch you mentioning a movie. Put the title between double quotation marks, please. What's your opinion on a movie you've seen recently?"]
         more_rec_question = ["Do you want to hear more recs? Type YES for more recs or NO if you don't want more recs.", "How about another one? Type YES for more recs or NO if you don't want more recs.", "Are you interested in another rec? Type YES for more recs or NO if you don't want more recs."]
-        
-        ### Process Logic ###
-        line = line.lower()
-        # in rec-giving stage
-        if self.in_rec_stage:
-            if line == "yes":
-                response += '\n' + random.choice(rec_sentences).replace("TITLE", self.recs[0])
-                self.recs = self.recs[1:]
-                if self.recs:
-                    response += '\n' + random.choice(more_rec_question)
-                else:
-                    self.in_rec_stage = False
-                    response += '\n' + random.choice(repeat)
-            elif line == "no":
-                self.in_rec_stage = False
-                self.recs = []
-                response = random.choice(repeat)
-            else:
-                response = "Please type YES for more recs or NO if you don't want any more recs."
 
-        # in question-asking stage
-        else:
-            titles = self.extract_titles(line)
-            sentiment = self.extract_sentiment(line)
-            if len(titles) > 1:
-                response = random.choice(one_at_a_time)
-            elif len(titles) == 1:
-                indices = self.find_movies_by_title(titles[0])
-                if not indices:
-                    response = random.choice(nonexistent).replace("TITLE", titles[0].title())
-                elif sentiment == 0:
-                    response = random.choice(neutral_echos).replace("TITLE", titles[0].title())
-                else:
-                    if sentiment == 1:
-                        self.user_ratings[indices[0]] = 1
-                        response = random.choice(positive_echos).replace("TITLE", titles[0].title())
+        if self.llm_enabled:
+            ### Process Logic ###
+            line = line.lower()
+            emotions = self.extract_emotion(line)
+            # in rec-giving stage
+            if self.in_rec_stage:
+                if line == "yes":
+                    response += '\n' + random.choice(rec_sentences).replace("TITLE", self.recs[0])
+                    self.recs = self.recs[1:]
+                    if self.recs:
+                        response += '\n' + random.choice(more_rec_question)
                     else:
-                        self.user_ratings[indices[0]] = -1
-                        response = random.choice(negative_echos).replace("TITLE", titles[0].title())
+                        self.in_rec_stage = False
+                        response += '\n' + random.choice(repeat)
+                elif line == "no":
+                    self.in_rec_stage = False
+                    self.recs = []
+                    response = random.choice(repeat)
+                else:
+                    if emotions:
+                        emotion_resp = emotion_helper(emotions)
+                        if emotion_resp:
+                            response = emotion_resp
+                            response += "\n Please type YES for more recs or NO if you don't want any more recs."
+                    else:
+                        response = "Please type YES for more recs or NO if you don't want any more recs."
 
-                    if np.count_nonzero(self.user_ratings) < 5:
-                        response += '\n' + random.choice(more_movie)
-                    else: # 5 movies given
-                        self.in_rec_stage = True
-                        response += '\n' + random.choice(enough)
-                        rec_nums = self.recommend(self.user_ratings, self.ratings)
-                        self.recs = []
-                        for index in rec_nums:
-                            self.recs.append(self.titles[index][0])
+            # in question-asking stage
             else:
-                response = random.choice(talk_about_movies_only)
+                titles = self.extract_titles(line)
+                sentiment = self.extract_sentiment(line)
+                if len(titles) > 1:
+                    response = random.choice(one_at_a_time)
+                elif len(titles) == 1:
+                    indices = self.find_movies_by_title(titles[0])
+                    if not indices:
+                        if emotions:
+                            emotion_resp = emotion_helper(emotions)
+                            if emotion_resp:
+                                response = emotion_resp
+                                response += generate_nonexistent_response().replace("TITLE", titles[0].title())
+                        else:
+                            response = generate_nonexistent_response().replace("TITLE", titles[0].title())
+                    elif sentiment == 0:
+                        if emotions:
+                            emotion_resp = emotion_helper(emotions)
+                            if emotion_resp:
+                                response = emotion_resp
+                                response += generate_neutral_response().replace("TITLE", titles[0].title())
+                        else:
+                            response = generate_neutral_response().replace("TITLE", titles[0].title())
+                    else:
+                        if sentiment == 1:
+                            self.user_ratings[indices[0]] = 1
+                            if emotions:
+                                emotion_resp = emotion_helper(emotions)
+                                if emotion_resp:
+                                    response = emotion_resp
+                                    response += generate_positive_response().replace("TITLE", titles[0].title())
+                            else:
+                                response = generate_positive_response().replace("TITLE", titles[0].title())
+                        else:
+                            self.user_ratings[indices[0]] = -1
+                            if emotions:
+                                emotion_resp = emotion_helper(emotions)
+                                if emotion_resp:
+                                    response = emotion_resp
+                                    response += generate_negative_response().replace("TITLE", titles[0].title())
+                            else:
+                                response = generate_negative_response().replace("TITLE", titles[0].title())
+
+                        if np.count_nonzero(self.user_ratings) < 5:
+                            response += '\n' + random.choice(more_movie)
+                        else: # 5 movies given
+                            self.in_rec_stage = True
+                            response += '\n' + random.choice(enough)
+                            rec_nums = self.recommend(self.user_ratings, self.ratings)
+                            self.recs = []
+                            for index in rec_nums:
+                                self.recs.append(self.titles[index][0])
+                else:
+                    if emotions:
+                        emotion_resp = emotion_helper(emotions)
+                        if emotion_resp:
+                            response = emotion_resp
+                            response += random.choice(talk_about_movies_only)
+                    else:
+                        response = random.choice(talk_about_movies_only)
+
+        else: # standard mode
+            nonexistent = ["It doesn't seem like TITLE exists in my database....Tell me about another movie.", "Sorry, I've never heard of TITLE! Tell me about a different movie.", "Hmm, I'm not familiar with TITLE. Tell me about a different movie."]
+            positive_echos = ["Good to hear you liked TITLE!", "You liked TITLE? Me too!", "I'm glad you liked TITLE."]
+            negative_echos = ["That's too bad that you didn't like TITLE.", "I'm so sorry you didn't like TITLE.", "Yikes, sorry you didn't like TITLE. I also didn't really enjoy it."]
+            neutral_echos = ["Hmm, I don't really get what you mean about TITLE....Please tell me if you liked TITLE or not, or tell me about a different movie.", "Sorry, I can't tell if you liked TITLE or not. Can you please clarify?", "I'm confused whether or not you liked TITLE. Please explain further about TITLE."]
+    
+            ### Process Logic ###
+            line = line.lower()
+            # in rec-giving stage
+            if self.in_rec_stage:
+                if line == "yes":
+                    response += '\n' + random.choice(rec_sentences).replace("TITLE", self.recs[0])
+                    self.recs = self.recs[1:]
+                    if self.recs:
+                        response += '\n' + random.choice(more_rec_question)
+                    else:
+                        self.in_rec_stage = False
+                        response += '\n' + random.choice(repeat)
+                elif line == "no":
+                    self.in_rec_stage = False
+                    self.recs = []
+                    response = random.choice(repeat)
+                else:
+                    response = "Please type YES for more recs or NO if you don't want any more recs."
+
+            # in question-asking stage
+            else:
+                titles = self.extract_titles(line)
+                sentiment = self.extract_sentiment(line)
+                if len(titles) > 1:
+                    response = random.choice(one_at_a_time)
+                elif len(titles) == 1:
+                    indices = self.find_movies_by_title(titles[0])
+                    if not indices:
+                        response = random.choice(nonexistent).replace("TITLE", titles[0].title())
+                    elif sentiment == 0:
+                        response = random.choice(neutral_echos).replace("TITLE", titles[0].title())
+                    else:
+                        if sentiment == 1:
+                            self.user_ratings[indices[0]] = 1
+                            response = random.choice(positive_echos).replace("TITLE", titles[0].title())
+                        else:
+                            self.user_ratings[indices[0]] = -1
+                            response = random.choice(negative_echos).replace("TITLE", titles[0].title())
+
+                        if np.count_nonzero(self.user_ratings) < 5:
+                            response += '\n' + random.choice(more_movie)
+                        else: # 5 movies given
+                            self.in_rec_stage = True
+                            response += '\n' + random.choice(enough)
+                            rec_nums = self.recommend(self.user_ratings, self.ratings)
+                            self.recs = []
+                            for index in rec_nums:
+                                self.recs.append(self.titles[index][0])
+                else:
+                    response = random.choice(talk_about_movies_only)
+        
         ########################################################################
         #                          END OF YOUR CODE                            #
         ########################################################################
@@ -310,7 +450,8 @@ class Chatbot:
          """ "Anger", "Disgust", "Fear", "Happiness", "Sadness", "Surprise" """+\
          """ Return the emotions that you find as a comma separated list, and place a new-line character at the end of your response.""" +\
          """ Remember that the emotion of fear is usually conveyed through words like scary, frightened, startled. Be careful not to overdetect fear if a user sounds annoyed or disappointed.""" +\
-         """ It is possible that the user input has none of the six emotions listed above, in which case you should return an empty string.""" +\
+         """ If the user input expresses none of the six emotions listed above, your response should be [].""" +\
+         """If there is no emotion present in the user input, your response should be []."""+\
          """Here are a few example inputs and the expected ouputs for them: """+\
          """Input: "Wow! That was not a recommendation I expected!" Output: Surprise """+\
          """Input: "That movie was so lovely, I really enjoyed it! " Output: Happiness """+\
@@ -329,6 +470,7 @@ class Chatbot:
         parsed_list = response.lower().strip().split(",")
         for i in range(len(parsed_list)):
             parsed_list[i] = parsed_list[i].strip() 
+        if parsed_list == ['[]']: return []
         return parsed_list
 
     def extract_titles(self, preprocessed_input):

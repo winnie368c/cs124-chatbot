@@ -1,0 +1,43 @@
+Welcome to Stanford CS124's
+ _______  _______       ___________
+|       ||   _   |      \          \
+|    _  ||  |_|  | ____  ------    /
+|   |_| ||       ||____|      /   /
+|    ___||       |           /   /       
+|   |    |   _   |          /   /      
+|___|    |__| |__|         /___/
+
+ _______  __   __  _______  _______  _______  _______  _______  __
+|       ||  | |  ||   _   ||       ||  _    ||       ||       ||  |
+|       ||  |_|  ||  |_|  ||_     _|| |_|   ||   _   ||_     _||  |
+|       ||       ||       |  |   |  |       ||  | |  |  |   |  |  |
+|      _||       ||       |  |   |  |  _   | |  |_|  |  |   |  |__|
+|     |_ |   _   ||   _   |  |   |  | |_|   ||       |  |   |   __
+|_______||__| |__||__| |__|  |___|  |_______||_______|  |___|  |__|
+
+
+        Your task is to implement the chatbot as detailed in the PA7
+        instructions.
+        Remember: in the GUS mode, movie names will come in quotation marks
+        and expressions of sentiment will be simple!
+        TODO: Write here the description for your own chatbot!
+        
+[96mBot-tholomew Mouse> [0mNice to meet you, I'm Bot-tholomew Mouse! Tell me about a movie you watched so I can make some recommendations for you!
+> Who are you?
+
+['i am a bot designed to extract emotions from text. in this case', 'i can detect the emotions "anger"', '"disgust"', '"fear"', '"happiness"', '"sadness"', 'and "surprise". based on your input', 'i do not detect any of these emotions. therefore', 'my response is [].']
+[96mBot-tholomew Mouse> [0mI'm sorry to hear that you're feeling this way. Chat with me anytime, I'm here to help! I'm sorry if you're feeling angry. Let's try to find a solution together, friend! I'm picking up on your feeling of disgust. Let me assure you that I always strive to be a helpful and friendly friend like Mickey Mouse, so I'm sorry if I've given you that impression. I understand you're feeling fear, that can be quite challenging. Let's face this together, buddy! I'm so glad to hear you're feeling happiness! It's wonderful to share in your joy! I'm sorry to hear that you're feeling sad. Cheer up, better days are ahead! I'm so surprised too! This is such a fun and unexpected conversation! Is there anything else that surprises you? I'm sorry, I didn't detect any emotion in your message. Please feel free to share how you're feeling, and I'll do my best to respond with a cheerful remark! I'm sorry to hear that you're feeling sad. I'm here for you, buddy! Hmm, I didn't hear you say a movie title. Put the title between double quotation marks. Tell me about a movie you've watched.
+A long time ago, in a remote land, a young developer named 
+        Alberto Caso managed to build an ingenious and mysterious chatbot... 
+        Now it's your turn! 
+> I liked "Inception"
+
+[96mBot-tholomew Mouse> [0m Gosh, I'm so glad you liked Inception too! My cousin Mickey Mouse and I always have a blast watching it! It's such a fun and exciting movie!
+What other movie have you seen and what was your opinion?
+> I didn't like "The Amazing Spider-Man"
+
+['sadness', 'dislike']
+[96mBot-tholomew Mouse> [0mI'm sorry to hear that you're feeling sad. Cheer up, better days are ahead! I'm sorry if you're feeling displeased. Let's try to find something we can both enjoy!  Gosh, I hear ya, pal! My cousin Mickey Mouse and I felt the same way about that movie The Amazing Spider-Man. It just didn't do it for us!
+What's another movie you watched, and did you like it?
+> :quit
+[96mBot-tholomew Mouse> [0mOkay, see you later!

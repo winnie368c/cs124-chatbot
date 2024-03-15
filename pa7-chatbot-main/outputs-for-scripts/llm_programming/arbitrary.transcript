@@ -1,0 +1,45 @@
+Welcome to Stanford CS124's
+ _______  _______       ___________
+|       ||   _   |      \          \
+|    _  ||  |_|  | ____  ------    /
+|   |_| ||       ||____|      /   /
+|    ___||       |           /   /       
+|   |    |   _   |          /   /      
+|___|    |__| |__|         /___/
+
+ _______  __   __  _______  _______  _______  _______  _______  __
+|       ||  | |  ||   _   ||       ||  _    ||       ||       ||  |
+|       ||  |_|  ||  |_|  ||_     _|| |_|   ||   _   ||_     _||  |
+|       ||       ||       |  |   |  |       ||  | |  |  |   |  |  |
+|      _||       ||       |  |   |  |  _   | |  |_|  |  |   |  |__|
+|     |_ |   _   ||   _   |  |   |  | |_|   ||       |  |   |   __
+|_______||__| |__||__| |__|  |___|  |_______||_______|  |___|  |__|
+
+
+        Your task is to implement the chatbot as detailed in the PA7
+        instructions.
+        Remember: in the GUS mode, movie names will come in quotation marks
+        and expressions of sentiment will be simple!
+        TODO: Write here the description for your own chatbot!
+        
+[96mBot-tholomew Mouse> [0mNice to meet you, I'm Bot-tholomew Mouse! Tell me about a movie you watched so I can make some recommendations for you!
+> Hi!
+
+[96mBot-tholomew Mouse> [0mHmm, I didn't hear you say a movie title. Put the title between double quotation marks. Tell me about a movie you've watched.
+> sup?
+
+[96mBot-tholomew Mouse> [0mI didn't catch you mentioning a movie. Put the title between double quotation marks, please. What's your opinion on a movie you've seen recently?
+> can you help me finish my pset?
+
+['based on the input you provided', 'it does not appear that there is a strong presence of any of the six emotions we are looking for. therefore', 'my response would be: []']
+[96mBot-tholomew Mouse> [0mI'm sorry to hear that you're feeling sad. Remember, it's okay to have tough days, and I'm here for you. I'm sorry if you're feeling that way! Let's try to find something more positive to chat about. How about your favorite hobby or activity? That always cheers me up! I'm sorry to hear that you're feeling sad. Remember, it's okay to have tough days, and I'm here for you. Hmm, I didn't hear you say a movie title. Put the title between double quotation marks. Tell me about a movie you've watched.
+> I'm tired
+
+['sadness', 'fatigue']
+[96mBot-tholomew Mouse> [0mI'm sorry to hear that you're feeling sad. Cheer up, better days are ahead! I'm sorry to hear that you're feeling tired. Let's take a break, shall we? Hmm, I didn't hear you say a movie title. Put the title between double quotation marks. Tell me about a movie you've watched.
+> what's your favorite color?
+
+[96mBot-tholomew Mouse> [0mSorry, I can only talk about movies right now. Make sure to put the title between double quotation marks. Tell me about a movie you've seen recently.
+> :quit
+
+[96mBot-tholomew Mouse> [0mOkay, see you later!
